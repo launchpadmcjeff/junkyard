@@ -1,0 +1,132 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "CodeDeploy template for deploying code.",
+    "Metadata": {},
+    "Parameters": {
+        "ApplicationName": {
+            "Description": "A name for the CodeDeploy application.",
+            "Type": "String",
+            "MinLength": 1,
+            "MaxLength": 255,
+            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+            "Default": "base-stack-app-name",
+            "ConstraintDescription": "ApplicationName is a AWS Name Type. Ending with a dash is also illegal"
+        },
+        "DeploymentGroupName": {
+            "Description": "A name for the CodeDeploy group.",
+            "Type": "String",
+            "MinLength": 1,
+            "MaxLength": 255,
+            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+            "Default": "base-stack-group-name",
+            "ConstraintDescription": "DeploymentGroupName is a AWS Name Type. Two consecutive dashes is also illegal"
+        },
+        "DeploymentConfigName": {
+            "Description": "A name for the CodeDeploy config.",
+            "Type": "String",
+            "MinLength": 1,
+            "MaxLength": 255,
+            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+            "Default": "base-stack-config-name",
+            "ConstraintDescription": "DeploymentConfigName is a AWS Name Type. Two consecutive dashes is also illegal"
+        },
+        "BaseStackName": {
+            "Description": "Name of an active CloudFormation stack that contains the networking resources, such as the subnet and security group, that will be used in this stack.",
+            "Type": "String",
+            "MinLength": 1,
+            "MaxLength": 255,
+            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+            "Default": "base-stack"
+        }
+    },
+    "Resources": {
+        "Application": {
+            "Type": "AWS::CodeDeploy::Application",
+            "Properties": {
+                "ApplicationName": {
+                    "Ref": "ApplicationName"
+                }
+            },
+            "Metadata": {}
+        },
+        "DeploymentGroup": {
+            "Type": "AWS::CodeDeploy::DeploymentGroup",
+            "Properties": {
+                "ApplicationName": {
+                    "Ref": "ApplicationName"
+                },
+                "DeploymentGroupName": {
+                    "Ref": "DeploymentGroupName"
+                },
+                "ServiceRoleArn": {
+                    "Fn::GetAtt": [
+                        "CodeDeployServiceRole",
+                        "Arn"
+                    ]
+                },
+                "DeploymentConfigName": "CodeDeployDefault.OneAtATime",
+                "Ec2TagFilters": [
+                    {
+                        "Key": "Environment",
+                        "Type": "KEY_AND_VALUE",
+                        "Value": "code-deploy-test"
+                    }
+                ]
+            },
+            "Metadata": {}
+        },
+        "DeploymentConfig": {
+            "Type": "AWS::CodeDeploy::DeploymentConfig",
+            "Properties": {
+                "DeploymentConfigName": {
+                    "Ref": "DeploymentConfigName"
+                },
+                "MinimumHealthyHosts": {
+                    "Type": "HOST_COUNT",
+                    "Value": 1
+                }
+            }
+        },
+        "CodeDeployServiceRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": "CodeDeployServiceRole",
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "codedeploy.amazonaws.com"
+                                ]
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "Path": "/",
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSCodeDeployRole"
+                ]
+            }
+        }
+    },
+    "Outputs": {
+        "CodeDeployServiceRole": {
+            "Description": "The service role for CodeDeploy",
+            "Value": {
+                "Fn::GetAtt": [
+                    "CodeDeployServiceRole",
+                    "Arn"
+                ]
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-CodeDeployServiceRole"
+                }
+            }
+        }
+    }
+}
