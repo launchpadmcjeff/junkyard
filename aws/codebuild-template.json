@@ -24,7 +24,7 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "test-codebuild"
+            "Default": "test-projectName"
         },
         "ArtifactId": {
             "Description": "Used for the name folder in the S3 bucket.",
@@ -32,7 +32,7 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "test-codebuild"
+            "Default": "test-deployables"
         },
         "BaseStackName": {
             "Description": "Name of an active CloudFormation stack that contains the networking resources, such as the subnet and security group, that will be used in this stack.",
@@ -54,7 +54,7 @@
                         }
                     },
                     "Name": {"Ref": "ArtifactId"},
-                    "NamespaceType": "BUILD_ID",
+                    "NamespaceType": "NONE",
                     "Packaging": "NONE",
                     "Path": {"Ref": "GroupId"},
                     "Type": "S3"
@@ -79,12 +79,12 @@
                 },
                 "ServiceRole": {
                     "Fn::ImportValue": {
-                        "Fn::Sub": "${BaseStackName}-CodeBuildRole"
+                        "Fn::Sub": "${BaseStackName}-CodeBuildServiceRole"
                     }
                 },
                 "Source": {
                     "BuildSpec": "aws/buildspec.yml",
-                    "Location": "https://git-codecommit.us-west-2.amazonaws.com/v1/repos/testing-spring-boot-applications",
+                    "Location": "https://git-codecommit.us-west-2.amazonaws.com/v1/repos/junkyard",
                     "Type": "CODECOMMIT"
                 },
                 "Tags": [

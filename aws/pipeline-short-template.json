@@ -13,63 +13,63 @@
         "CodeBuildProjectName": {
             "Description": "The CodeBuild project name to build.",
             "Type": "String",
-            "Default": "test-codebuild",
+            "Default": "junkyard-codebuild",
             "AllowedPattern": "[\\x20-\\x7E]*",
             "ConstraintDescription": "Can contain only ASCII characters."
         },
         "GitBranch": {
             "Description": "Git branch to use for builds.",
             "Type": "String",
-            "Default": "junkyard",
+            "Default": "master",
             "AllowedPattern": "[\\x20-\\x7E]*",
             "ConstraintDescription": "Can contain only ASCII characters."
         },
         "RepositoryName": {
             "Description": "The Git repository to use for builds.",
             "Type": "String",
-            "Default": "testing-spring-boot-applications",
+            "Default": "junkyard",
             "AllowedPattern": "[\\x20-\\x7E]*",
             "ConstraintDescription": "Can contain only ASCII characters."
         },
         "PipelineName": {
             "Description": "The name for the new AWS CloudPipeline.",
             "Type": "String",
-            "Default": "test-pipeline",
+            "Default": "junkyard-pipeline",
             "AllowedPattern": "[\\x20-\\x7E]*",
             "ConstraintDescription": "Can contain only ASCII characters."
         },
-        "TestTemplateFileName": {
-            "Default": "test-single-instance-template.json",
+        "TestStackTemplate": {
+            "Default": "aws/single-instance-test-template.json",
             "Description": "The file name of the test template",
             "Type": "String"
         },
         "TestStackName": {
-            "Default": "test-single-instance",
+            "Default": "junkyard-single-instance",
             "Description": "A name for the test stack",
             "Type": "String"
         },
         "TestStackConfig": {
-            "Default": "test-single-instance-configuration.json",
+            "Default": "aws/single-instance-test-configuration.json",
             "Description": "The configuration file name for the test stack",
             "Type": "String"
         },
-        "ProdTemplateFileName": {
-            "Default": "test-blue-green-template.json",
+        "ProdStackTemplate": {
+            "Default": "blue-green-template.json",
             "Description": "The file name of the production template",
             "Type": "String"
         },
         "ProdStackName": {
-            "Default": "test-blue-green",
+            "Default": "junkyard-blue-green",
             "Description": "A name for the production stack",
             "Type": "String"
         },
         "ProdStackConfig": {
-            "Default": "test-blue-green-configuration.json",
+            "Default": "blue-green-configuration.json",
             "Description": "The configuration file name for the production stack",
             "Type": "String"
         },
         "ChangeSetName": {
-            "Default": "test-blue-green-changeset",
+            "Default": "prod-blue-green-changeset",
             "Description": "A name for the production stack change set",
             "Type": "String"
         },
@@ -83,7 +83,7 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "base-stack-app-name",
+            "Default": "base-stack-junkyard",
             "ConstraintDescription": "ApplicationName is a AWS Name Type. Ending with a dash is also illegal"
         },
         "DeploymentGroupName": {
@@ -92,7 +92,7 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "base-stack-group-name",
+            "Default": "base-stack-junkyard-group",
             "ConstraintDescription": "DeploymentGroupName is a AWS Name Type. Two consecutive dashes is also illegal"
         }
     },
@@ -104,8 +104,19 @@
                         "default": "CodePipeline Settings"
                     },
                     "Parameters": [
+                        "BaseStackName",
                         "PipelineName",
                         "Email"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Source and Build Settings"
+                    },
+                    "Parameters": [
+                        "RepositoryName",
+                        "GitBranch",
+                        "CodeBuildProjectName"
                     ]
                 },
                 {
@@ -114,8 +125,17 @@
                     },
                     "Parameters": [
                         "TestStackName",
-                        "TemplateFileName",
+                        "TestStackTemplate",
                         "TestStackConfig"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Test Deploy Settings"
+                    },
+                    "Parameters": [
+                        "CodeDeployApplication",
+                        "DeploymentGroupName"
                     ]
                 },
                 {
@@ -125,6 +145,7 @@
                     "Parameters": [
                         "ChangeSetName",
                         "ProdStackName",
+                        "ProdStackTemplate",
                         "ProdStackConfig"
                     ]
                 }
@@ -274,7 +295,7 @@
                                         "Fn::Sub": "SourceOutput::${TestStackConfig}"
                                     },
                                     "TemplatePath": {
-                                        "Fn::Sub": "SourceOutput::${TestTemplateFileName}"
+                                        "Fn::Sub": "SourceOutput::${TestStackTemplate}"
                                     }
                                 },
                                 "RunOrder": "2"
