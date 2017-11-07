@@ -402,11 +402,11 @@
                 "Tags": [
                     {
                         "Key": "Environment",
-                        "Value": "code-deploy-test"
+                        "Value": "code-deploy-junkyard"
                     },
                     {
                         "Key": "Name",
-                        "Value": "code-deploy-test"
+                        "Value": "code-deploy-junkyard"
                     }
                 ]
             }
