@@ -54,7 +54,7 @@
             "Type": "String"
         },
         "ProdStackTemplate": {
-            "Default": "blue-green-template.json",
+            "Default": "aws/blue-green-template.json",
             "Description": "The file name of the production template",
             "Type": "String"
         },
@@ -64,12 +64,12 @@
             "Type": "String"
         },
         "ProdStackConfig": {
-            "Default": "blue-green-configuration.json",
+            "Default": "aws/blue-green-configuration.json",
             "Description": "The configuration file name for the production stack",
             "Type": "String"
         },
         "ChangeSetName": {
-            "Default": "prod-blue-green-changeset",
+            "Default": "junkyard-blue-green-changeset",
             "Description": "A name for the production stack change set",
             "Type": "String"
         },
@@ -361,6 +361,89 @@
                                     }
                                 },
                                 "RunOrder": "5"
+                            }
+                        ]
+                    },
+                     {
+                        "Name": "ProdStage",
+                        "Actions": [
+                            {
+                                "Name": "CreateChangeSet",
+                                "ActionTypeId": {
+                                    "Category": "Deploy",
+                                    "Owner": "AWS",
+                                    "Provider": "CloudFormation",
+                                    "Version": "1"
+                                },
+                                "InputArtifacts": [
+                                    {
+                                        "Name": "SourceOutput"
+                                    }
+                                ],
+                                "Configuration": {
+                                    "ActionMode": "CHANGE_SET_REPLACE",
+                                    "RoleArn": {
+                                        "Fn::ImportValue": {
+                                            "Fn::Sub": "${BaseStackName}-CloudFormationRole"
+                                        }
+                                    },
+                                    "Capabilities": "CAPABILITY_NAMED_IAM",
+                                    "StackName": {
+                                        "Ref": "ProdStackName"
+                                    },
+                                    "ChangeSetName": {
+                                        "Ref": "ChangeSetName"
+                                    },
+                                    "TemplateConfiguration": {
+                                        "Fn::Sub": "SourceOutput::${ProdStackConfig}"
+                                    },
+                                    "TemplatePath": {
+                                        "Fn::Sub": "SourceOutput::${ProdStackTemplate}"
+                                    }
+                                },
+                                "RunOrder": "1"
+                            },
+                            {
+                                "Name": "ApproveChangeSet",
+                                "ActionTypeId": {
+                                    "Category": "Approval",
+                                    "Owner": "AWS",
+                                    "Provider": "Manual",
+                                    "Version": "1"
+                                },
+                                "Configuration": {
+                                    "NotificationArn": {
+                                        "Ref": "CodePipelineSNSTopic"
+                                    },
+                                    "CustomData": {
+                                        "Fn::Sub": "A new change set was created for the ${ProdStackName} stack. Do you want to implement the changes?"
+                                    }
+                                },
+                                "RunOrder": "2"
+                            },
+                            {
+                                "Name": "ExecuteChangeSet",
+                                "ActionTypeId": {
+                                    "Category": "Deploy",
+                                    "Owner": "AWS",
+                                    "Provider": "CloudFormation",
+                                    "Version": "1"
+                                },
+                                "Configuration": {
+                                    "ActionMode": "CHANGE_SET_EXECUTE",
+                                    "ChangeSetName": {
+                                        "Ref": "ChangeSetName"
+                                    },
+                                    "RoleArn": {
+                                        "Fn::ImportValue": {
+                                            "Fn::Sub": "${BaseStackName}-CloudFormationRole"
+                                        }
+                                    },
+                                    "StackName": {
+                                        "Ref": "ProdStackName"
+                                    }
+                                },
+                                "RunOrder": "3"
                             }
                         ]
                     }
