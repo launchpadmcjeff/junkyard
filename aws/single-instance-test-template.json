@@ -44,7 +44,7 @@
                 "HVM64": "ami-08842d60"
             },
             "us-west-1": {
-                "HVM64": "ami-8786c6b7"
+                "HVM64": "ami-1a033c7a"
             },
             "us-west-2": {
                 "HVM64": "ami-32d8124a"
