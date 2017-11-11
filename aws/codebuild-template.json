@@ -119,7 +119,7 @@
                 },
                 "Source": {
                     "BuildSpec": "aws/buildspec.yml",
-                    "Location": "https://git-codecommit.us-west-2.amazonaws.com/v1/repos/warez-my-stuff",
+                    "Location": "https://git-codecommit.us-west-2.amazonaws.com/v1/repos/junkyard",
                     "Type": "CODECOMMIT"
                 },
                 "Tags": [

@@ -21,8 +21,8 @@
         "GitRepo": {
             "Type": "AWS::CodeCommit::Repository",
             "Properties": {
-                "RepositoryDescription": "The wms repo",
-                "RepositoryName": "warez-my-stuff"
+                "RepositoryDescription": {"Ref": "RepositoryDescription"},
+                "RepositoryName": {"Ref": "RepositoryName"}
             }
         }
     },
