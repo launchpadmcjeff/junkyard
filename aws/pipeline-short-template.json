@@ -2,13 +2,29 @@
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "The CodePipeline Stack.  It builds the infrastructure to get to production.",
     "Parameters": {
-        "BaseStackName": {
+        "CodeDeployStackName": {
+            "Description": "Name of an active CloudFormation stack that contains the CodeDeploy resources.",
+            "Type": "String",
+            "MinLength": 1,
+            "MaxLength": 255,
+            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+            "Default": "junkyard-codedeploy"
+        },
+        "RoleStackName": {
+            "Description": "Name of an active CloudFormation stack that contains the role resources.",
+            "Type": "String",
+            "MinLength": 1,
+            "MaxLength": 255,
+            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+            "Default": "junkyard-roles"
+        },
+        "VpcStackName": {
             "Description": "Name of an active CloudFormation stack that contains the networking resources, such as the subnet and security group, that will be used in this stack.",
             "Type": "String",
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "base-stack"
+            "Default": "junkyard-vpc"
         },
         "CodeBuildProjectName": {
             "Description": "The CodeBuild project name to build.",
@@ -27,7 +43,7 @@
         "RepositoryName": {
             "Description": "The Git repository to use for builds.",
             "Type": "String",
-            "Default": "junkyard",
+            "Default": "warez-my-stuff",
             "AllowedPattern": "[\\x20-\\x7E]*",
             "ConstraintDescription": "Can contain only ASCII characters."
         },
@@ -76,24 +92,6 @@
         "Email": {
             "Description": "The email address where CodePipeline sends pipeline notifications",
             "Type": "String"
-        },
-        "CodeDeployApplication": {
-            "Description": "A name for the CodeDeploy application.",
-            "Type": "String",
-            "MinLength": 1,
-            "MaxLength": 255,
-            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "base-stack-junkyard",
-            "ConstraintDescription": "ApplicationName is a AWS Name Type. Ending with a dash is also illegal"
-        },
-        "DeploymentGroupName": {
-            "Description": "A name for the CodeDeploy group.",
-            "Type": "String",
-            "MinLength": 1,
-            "MaxLength": 255,
-            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "base-stack-junkyard-group",
-            "ConstraintDescription": "DeploymentGroupName is a AWS Name Type. Two consecutive dashes is also illegal"
         }
     },
     "Metadata": {
@@ -104,7 +102,9 @@
                         "default": "CodePipeline Settings"
                     },
                     "Parameters": [
-                        "BaseStackName",
+                        "RoleStackName",
+                        "VpcStackName",
+                        "CodeDeployStackName",
                         "PipelineName",
                         "Email"
                     ]
@@ -131,16 +131,7 @@
                 },
                 {
                     "Label": {
-                        "default": "Test Deploy Settings"
-                    },
-                    "Parameters": [
-                        "CodeDeployApplication",
-                        "DeploymentGroupName"
-                    ]
-                },
-                {
-                    "Label": {
-                        "default": "Production Stack Settings"
+                        "default": "Prod Stack Settings"
                     },
                     "Parameters": [
                         "ChangeSetName",
@@ -173,7 +164,7 @@
                     "Type": "S3",
                     "Location": {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${BaseStackName}-CodePipelineArtifactLocation"
+                            "Fn::Sub": "${VpcStackName}-CodePipelineArtifactLocation"
                         }
                     }
                 },
@@ -183,7 +174,7 @@
                 "RestartExecutionOnUpdate": true,
                 "RoleArn": {
                     "Fn::ImportValue": {
-                        "Fn::Sub": "${BaseStackName}-CodePipelineRole"
+                        "Fn::Sub": "${RoleStackName}-CodePipelineRole"
                     }
                 },
                 "Stages": [
@@ -209,7 +200,7 @@
                                 },
                                 "OutputArtifacts": [
                                     {
-                                        "Name": "SourceOutput"
+                                        "Name": "Source01"
                                     }
                                 ],
                                 "RunOrder": 1
@@ -223,7 +214,7 @@
                                 "Name": "BuildAction",
                                 "InputArtifacts": [
                                     {
-                                        "Name": "SourceOutput"
+                                        "Name": "Source01"
                                     }
                                 ],
                                 "ActionTypeId": {
@@ -239,7 +230,7 @@
                                 },
                                 "OutputArtifacts": [
                                     {
-                                        "Name": "BuildOutput"
+                                        "Name": "Build01"
                                     }
                                 ],
                                 "RunOrder": 1
@@ -277,14 +268,14 @@
                                 },
                                 "InputArtifacts": [
                                     {
-                                        "Name": "SourceOutput"
+                                        "Name": "Source01"
                                     }
                                 ],
                                 "Configuration": {
                                     "ActionMode": "REPLACE_ON_FAILURE",
                                     "RoleArn": {
                                         "Fn::ImportValue": {
-                                            "Fn::Sub": "${BaseStackName}-CloudFormationRole"
+                                            "Fn::Sub": "${RoleStackName}-CloudFormationRole"
                                         }
                                     },
                                     "Capabilities": "CAPABILITY_NAMED_IAM",
@@ -292,10 +283,10 @@
                                         "Ref": "TestStackName"
                                     },
                                     "TemplateConfiguration": {
-                                        "Fn::Sub": "SourceOutput::${TestStackConfig}"
+                                        "Fn::Sub": "Source01::${TestStackConfig}"
                                     },
                                     "TemplatePath": {
-                                        "Fn::Sub": "SourceOutput::${TestStackTemplate}"
+                                        "Fn::Sub": "Source01::${TestStackTemplate}"
                                     }
                                 },
                                 "RunOrder": "2"
@@ -310,15 +301,19 @@
                                 },
                                 "Configuration": {
                                     "ApplicationName": {
-                                        "Ref": "CodeDeployApplication"
+                                        "Fn::ImportValue": {
+                                            "Fn::Sub": "${CodeDeployStackName}-CodeDeployApplication"
+                                        }
                                     },
                                     "DeploymentGroupName": {
-                                        "Ref": "DeploymentGroupName"
+                                        "Fn::ImportValue": {
+                                            "Fn::Sub": "${CodeDeployStackName}-CodeDeployDeploymentGroup"
+                                        }
                                     }
                                 },
                                 "InputArtifacts": [
                                     {
-                                        "Name": "BuildOutput"
+                                        "Name": "Build01"
                                     }
                                 ],
                                 "RunOrder": "3"
@@ -353,7 +348,7 @@
                                     "ActionMode": "DELETE_ONLY",
                                     "RoleArn": {
                                         "Fn::ImportValue": {
-                                            "Fn::Sub": "${BaseStackName}-CloudFormationRole"
+                                            "Fn::Sub": "${RoleStackName}-CloudFormationRole"
                                         }
                                     },
                                     "StackName": {
@@ -364,7 +359,7 @@
                             }
                         ]
                     },
-                     {
+                    {
                         "Name": "ProdStage",
                         "Actions": [
                             {
@@ -377,14 +372,14 @@
                                 },
                                 "InputArtifacts": [
                                     {
-                                        "Name": "SourceOutput"
+                                        "Name": "Source01"
                                     }
                                 ],
                                 "Configuration": {
                                     "ActionMode": "CHANGE_SET_REPLACE",
                                     "RoleArn": {
                                         "Fn::ImportValue": {
-                                            "Fn::Sub": "${BaseStackName}-CloudFormationRole"
+                                            "Fn::Sub": "${RoleStackName}-CloudFormationRole"
                                         }
                                     },
                                     "Capabilities": "CAPABILITY_NAMED_IAM",
@@ -395,10 +390,10 @@
                                         "Ref": "ChangeSetName"
                                     },
                                     "TemplateConfiguration": {
-                                        "Fn::Sub": "SourceOutput::${ProdStackConfig}"
+                                        "Fn::Sub": "Source01::${ProdStackConfig}"
                                     },
                                     "TemplatePath": {
-                                        "Fn::Sub": "SourceOutput::${ProdStackTemplate}"
+                                        "Fn::Sub": "Source01::${ProdStackTemplate}"
                                     }
                                 },
                                 "RunOrder": "1"
@@ -436,7 +431,7 @@
                                     },
                                     "RoleArn": {
                                         "Fn::ImportValue": {
-                                            "Fn::Sub": "${BaseStackName}-CloudFormationRole"
+                                            "Fn::Sub": "${RoleStackName}-CloudFormationRole"
                                         }
                                     },
                                     "StackName": {

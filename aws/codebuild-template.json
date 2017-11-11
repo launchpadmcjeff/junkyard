@@ -1,6 +1,33 @@
 {
     "AWSTemplateFormatVersion": "2010-09-09",
     "Description": "The CodeBuild stack. It builds teh codez.",
+    
+    "Metadata": {
+        "AWS::CloudFormation::Interface": {
+            "ParameterGroups": [
+                {
+                    "Label": {
+                        "default": "CodeBuild Settings"
+                    },
+                    "Parameters": [
+                        "RoleStackName",
+                        "VpcStackName",
+                        "CodeBuildProjectName",
+                        "CodeBuildProjectDescription"
+                    ]
+                },
+                {
+                    "Label": {
+                        "default": "Source and Build Settings"
+                    },
+                    "Parameters": [
+                        "GroupId",
+                        "ArtifactId"
+                    ]
+                }
+            ]
+        }
+    },
     "Parameters": {
         "CodeBuildProjectName": {
             "Description": "The name for this build project. This name must be unique across all of the build projects in your AWS account.",
@@ -8,7 +35,7 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "test-codebuild"
+            "Default": "junkyard-codebuild"
         },
         "CodeBuildProjectDescription": {
             "Description": "The description for this build project.",
@@ -16,7 +43,7 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "test-codebuild"
+            "Default": "junkyard-codebuild"
         },
         "GroupId": {
             "Description": "Used for the path folder in the S3 bucket.",
@@ -24,7 +51,7 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "test-projectName"
+            "Default": "junkyard-projectName"
         },
         "ArtifactId": {
             "Description": "Used for the name folder in the S3 bucket.",
@@ -32,15 +59,23 @@
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "test-deployables"
+            "Default": "junkyard-deployables"
         },
-        "BaseStackName": {
-            "Description": "Name of an active CloudFormation stack that contains the networking resources, such as the subnet and security group, that will be used in this stack.",
+        "RoleStackName": {
+            "Description": "Name of an active CloudFormation stack containing the Service Roles.",
             "Type": "String",
             "MinLength": 1,
             "MaxLength": 255,
             "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
-            "Default": "base-stack"
+            "Default": "junkyard-roles"
+        },
+        "VpcStackName": {
+            "Description": "Name of an active CloudFormation stack containing the Service Roles.",
+            "Type": "String",
+            "MinLength": 1,
+            "MaxLength": 255,
+            "AllowedPattern": "^[a-zA-Z][-a-zA-Z0-9]*$",
+            "Default": "junkyard-vpc"
         }
     },
     "Resources": {
@@ -50,7 +85,7 @@
                 "Artifacts": {
                     "Location": {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${BaseStackName}-CodeBuildArtifactLocation"
+                            "Fn::Sub": "${VpcStackName}-CodeBuildArtifactLocation"
                         }
                     },
                     "Name": {"Ref": "ArtifactId"},
@@ -79,12 +114,12 @@
                 },
                 "ServiceRole": {
                     "Fn::ImportValue": {
-                        "Fn::Sub": "${BaseStackName}-CodeBuildServiceRole"
+                        "Fn::Sub": "${RoleStackName}-CodeBuildRole"
                     }
                 },
                 "Source": {
                     "BuildSpec": "aws/buildspec.yml",
-                    "Location": "https://git-codecommit.us-west-2.amazonaws.com/v1/repos/junkyard",
+                    "Location": "https://git-codecommit.us-west-2.amazonaws.com/v1/repos/warez-my-stuff",
                     "Type": "CODECOMMIT"
                 },
                 "Tags": [

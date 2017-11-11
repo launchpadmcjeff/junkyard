@@ -1,10 +1,10 @@
 {
-    "Description": "This template creates the resources required for a sample AWS CodeDeploy blue/green deployment. **WARNING** This template creates one or more Amazon EC2 instances. You will be billed for the AWS resources created by this template.",
+    "Description": "This template creates the resources for AWS CodeDeploy blue/green deployment.",
     "AWSTemplateFormatVersion": "2010-09-09",
     "Parameters": {
-        "NetworkStackName": {
-            "Description": "The name of the base stack.",
-            "Default": "base-stack",
+        "VpcStackName": {
+            "Description": "The name of the VPC stack.",
+            "Default": "junkyard-vpc",
             "Type": "String",
             "MinLength": "1",
             "MaxLength": "32",
@@ -17,15 +17,6 @@
             "MinLength": "1",
             "MaxLength": "32",
             "ConstraintDescription": "Must contain only alphanumeric characters or hyphens, and cannot begin or end with a hyphen. Must have a maximum of 32 characters."
-        },
-        "KeyPairName": {
-            "Description": "Name of an existing Amazon EC2 key pair to enable SSH or RDP access to the instances.",
-            "Default": "aws",
-            "Type": "String",
-            "MinLength": "1",
-            "MaxLength": "255",
-            "AllowedPattern": "[\\x20-\\x7E]*",
-            "ConstraintDescription": "Can contain only ASCII characters."
         },
         "InstanceCount": {
             "Description": "Number of Amazon EC2 instances in an autoscaling group.",
@@ -42,8 +33,7 @@
             "AllowedValues": [
                 "t2.micro",
                 "t2.small",
-                "t2.medium",
-                "t2.large"
+                "t2.medium"
             ],
             "ConstraintDescription": "Must be a valid EC2 Instance type"
         }
@@ -53,11 +43,23 @@
             "us-east-1": {
                 "Linux": "ami-b73b63a0"
             },
+            "us-east-2": {
+                "Linux": "ami-58277d3d"
+            },
+            "us-west-1": {
+                "Linux": "ami-23e8a343"
+            },
             "us-west-2": {
                 "Linux": "ami-5ec1673e"
             },
             "eu-west-1": {
-                "Linux": "ami-9398d3e0"
+                "Linux": "ami-8786c6b7"
+            },
+            "eu-west-2": {
+                "Linux": "ami-32d8124a"
+            },
+            "ca-central-1": {
+                "Linux": "ami-b48b39d0"
             },
             "ap-southeast-2": {
                 "Linux": "ami-db704cb8"
@@ -74,12 +76,6 @@
             "cn-northwest-1": {
                 "Linux": "ami-9e606bfc"
             },
-            "us-east-2": {
-                "Linux": "ami-58277d3d"
-            },
-            "us-west-1": {
-                "Linux": "ami-23e8a343"
-            },
             "eu-central-1": {
                 "Linux": "ami-f9619996"
             },
@@ -89,17 +85,8 @@
             "sa-east-1": {
                 "Linux": "ami-97831ffb"
             },
-            "eu-west-2": {
-                "Linux": "ami-d6cbc1b2"
-            },
-            "ca-central-1": {
-                "Linux": "ami-b48b39d0"
-            },
             "ap-northeast-2": {
                 "Linux": "ami-983ce8f6"
-            },
-            "us-gov-west-1": {
-                "Linux": "ami-700a8f11"
             }
         }
     },
@@ -171,17 +158,12 @@
                 "Subnets": [
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SubnetID0"
+                            "Fn::Sub": "${VpcStackName}-SubnetID0"
                         }
                     },
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SubnetID1"
-                        }
-                    },
-                    {
-                        "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SubnetID2"
+                            "Fn::Sub": "${VpcStackName}-SubnetID1"
                         }
                     }
                 ],
@@ -202,12 +184,12 @@
                 "SecurityGroups": [
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-ProdWebServerSecurityGroupID"
+                            "Fn::Sub": "${VpcStackName}-ProdWebServerSecurityGroupID"
                         }
                     },
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SshSecurityGroupID"
+                            "Fn::Sub": "${VpcStackName}-SshSecurityGroupID"
                         }
                     }
                 ]
@@ -247,22 +229,22 @@
                     "Ref": "InstanceType"
                 },
                 "KeyName": {
-                    "Ref": "KeyPairName"
+                    "Fn::Sub": "aws-${AWS::Region}"
                 },
                 "SecurityGroups": [
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-TestWebServerSecurityGroupID"
+                            "Fn::Sub": "${VpcStackName}-TestWebServerSecurityGroupID"
                         }
                     },
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-ProdWebServerSecurityGroupID"
+                            "Fn::Sub": "${VpcStackName}-ProdWebServerSecurityGroupID"
                         }
                     },
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SshSecurityGroupID"
+                            "Fn::Sub": "${VpcStackName}-SshSecurityGroupID"
                         }
                     }
                 ],
@@ -284,7 +266,9 @@
                                 "'\n",
                                 "exit 1\n",
                                 "}\n",
-                                "yum install -y java-1.8.0 || error_exit error\n",
+                                "yum install -y mlocate\n",
+                                "yum install -y java-1.8.0 || error_exit 1\n",
+                                "yum install -y java-1.8.0-openjdk-devel || error_exit 1\n",
                                 "alternatives --set java /usr/lib/jvm/jre-1.8.0-openjdk.x86_64/bin/java || error_exit error\n",
                                 "# Install the AWS CodeDeploy Agent.\n",
                                 "cd /home/ec2-user/\n",
@@ -322,25 +306,15 @@
                 "DesiredCapacity": {
                     "Ref": "InstanceCount"
                 },
-                "AvailabilityZones": [
-                    "us-west-2a",
-                    "us-west-2b",
-                    "us-west-2c"
-                ],
                 "VPCZoneIdentifier": [
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SubnetID0"
+                            "Fn::Sub": "${VpcStackName}-SubnetID0"
                         }
                     },
                     {
                         "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SubnetID1"
-                        }
-                    },
-                    {
-                        "Fn::ImportValue": {
-                            "Fn::Sub": "${NetworkStackName}-SubnetID2"
+                            "Fn::Sub": "${VpcStackName}-SubnetID1"
                         }
                     }
                 ]

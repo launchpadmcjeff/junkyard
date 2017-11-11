@@ -1,6 +1,5 @@
 {
-  "Parameters" : {   
-    "KeyName" : "aws",
+  "Parameters" : {
     "InstanceType": "t2.micro"
   }
 }

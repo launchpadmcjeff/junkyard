@@ -1,0 +1,42 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "This template creates the resources required for a sample AWS CodeDeploy in-place deployment.",
+    "Parameters": {
+        "RepositoryName": {
+            "Description": "The CodeCommit git repo name.",
+            "Type": "String",
+            "Default": "robowebi-repo",
+            "AllowedPattern": "[-a-zA-Z0-9]+",
+            "ConstraintDescription": "Must be a valid Git repos name."
+        },
+        "RepositoryDescription": {
+            "Description": "The CodeCommit git repo description.",
+            "Type": "String",
+            "Default": "A default repository",
+            "AllowedPattern": "[-\\sa-zA-Z0-9]+",
+            "ConstraintDescription": "Must be a valid Git repos name."
+        }
+    },
+    "Resources": {
+        "GitRepo": {
+            "Type": "AWS::CodeCommit::Repository",
+            "Properties": {
+                "RepositoryDescription": "The wms repo",
+                "RepositoryName": "warez-my-stuff"
+            }
+        }
+    },
+    "Outputs": {
+        "GitRepo": {
+            "Description": "The git repo.",
+            "Value": {
+                "Ref": "GitRepo"
+            },
+            "Export": {
+                "Name": {
+                    "Fn::Sub": "${AWS::StackName}-GitRepo"
+                }
+            }
+        }
+    }
+}
