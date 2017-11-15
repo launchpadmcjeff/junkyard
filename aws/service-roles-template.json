@@ -32,7 +32,8 @@
             {
               "Effect": "Allow",
               "Action": [
-                "autoscaling:Describe*",
+                "autoscaling:*",
+                "elasticloadbalancing:*",
                 "cloudformation:Describe*",
                 "cloudformation:GetTemplate",
                 "s3:*"

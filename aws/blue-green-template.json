@@ -10,6 +10,11 @@
             "MaxLength": "32",
             "ConstraintDescription": "Must contain only alphanumeric characters or hyphens, and cannot begin or end with a hyphen. Must have a maximum of 32 characters."
         },
+        "RoleStackName": {
+            "Default": "junkyard-roles",
+            "Description": "Name of an active CloudFormation stack containing roles for this stack.",
+            "Type": "String"
+        },
         "LoadBalancerName": {
             "Description": "The name of the load balancer.",
             "Default": "junkyard-elb",
@@ -91,64 +96,6 @@
         }
     },
     "Resources": {
-        "InstanceRole": {
-            "Type": "AWS::IAM::Role",
-            "Properties": {
-                "AssumeRolePolicyDocument": {
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Principal": {
-                                "Service": [
-                                    "ec2.amazonaws.com"
-                                ]
-                            },
-                            "Action": [
-                                "sts:AssumeRole"
-                            ]
-                        }
-                    ]
-                },
-                "Path": "/"
-            }
-        },
-        "InstanceRolePolicies": {
-            "Type": "AWS::IAM::Policy",
-            "Properties": {
-                "PolicyName": "InstanceRole",
-                "PolicyDocument": {
-                    "Statement": [
-                        {
-                            "Effect": "Allow",
-                            "Action": [
-                                "autoscaling:Describe*",
-                                "cloudformation:Describe*",
-                                "cloudformation:GetTemplate",
-                                "s3:Get*",
-                                "s3:List*"
-                            ],
-                            "Resource": "*"
-                        }
-                    ]
-                },
-                "Roles": [
-                    {
-                        "Ref": "InstanceRole"
-                    }
-                ]
-            }
-        },
-        "InstanceRoleInstanceProfile": {
-            "Type": "AWS::IAM::InstanceProfile",
-            "Properties": {
-                "Path": "/",
-                "Roles": [
-                    {
-                        "Ref": "InstanceRole"
-                    }
-                ]
-            }
-        },
         "ClassicLoadBalancer": {
             "Type": "AWS::ElasticLoadBalancing::LoadBalancer",
             "Properties": {
@@ -214,7 +161,9 @@
             "Type": "AWS::AutoScaling::LaunchConfiguration",
             "Properties": {
                 "IamInstanceProfile": {
-                    "Ref": "InstanceRoleInstanceProfile"
+                    "Fn::ImportValue": {
+                        "Fn::Sub": "${RoleStackName}-InstanceRoleInstanceProfile"
+                    }
                 },
                 "ImageId": {
                     "Fn::FindInMap": [

@@ -43,7 +43,7 @@
         "RepositoryName": {
             "Description": "The Git repository to use for builds.",
             "Type": "String",
-            "Default": "warez-my-stuff",
+            "Default": "junkyard",
             "AllowedPattern": "[\\x20-\\x7E]*",
             "ConstraintDescription": "Can contain only ASCII characters."
         },
